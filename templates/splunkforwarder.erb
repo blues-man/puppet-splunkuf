@@ -30,7 +30,7 @@ splunk_stop() {
 <% if @system_user == "root" %>
   "/opt/splunkforwarder/bin/splunk" stop
 <% else %>
-  su - <%= @system_user %> -c '/opt/splunkforwarder/bin/splunk" stop'
+  su - <%= @system_user %> -c '/opt/splunkforwarder/bin/splunk stop'
 <% end %>
   RETVAL=$?
 }
