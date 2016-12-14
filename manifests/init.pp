@@ -28,7 +28,7 @@
 #
 class splunkuf (
   $targeturi    = $::splunkuf::params::targeturi,
-  $rpm_url  =     $::splunkuf::params::rpm_url,
+  $rpm_url      = $::splunkuf::params::rpm_url,
   $systemd      = $::splunkuf::params::systemd,
   $system_user  = $::splunkuf::params::system_user,
   $mgmthostport = $::splunkuf::params::mgmthostport,
