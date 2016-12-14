@@ -23,13 +23,14 @@
 class splunkuf::params {
   $targeturi   = 'spunk.tld:8089'
   $system_user = 'splunk'
+  $rpm_url     = undef
 
   $mgmthostport = undef
 
   case $::osfamily {
     'RedHat': {
       if $::operatingsystemmajrelease >= 7 {
-         $systemd = true
+        $systemd = true
       }
     }
     'Debian': {
