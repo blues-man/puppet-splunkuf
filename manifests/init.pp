@@ -28,14 +28,25 @@
 #
 class splunkuf (
   $targeturi    = $::splunkuf::params::targeturi,
+  $rpm_url  =     $::splunkuf::params::rpm_url,
   $systemd      = $::splunkuf::params::systemd,
   $system_user  = $::splunkuf::params::system_user,
   $mgmthostport = $::splunkuf::params::mgmthostport,
 ) inherits splunkuf::params {
 
-  package { 'splunkforwarder':
-    ensure => latest,
+
+  if $rpm_url != undef {
+    package { 'splunkforwarder':
+      ensure   => installed,
+      provider => 'rpm',
+      source   => $rpm_url
+    }
+  } else {
+    package { 'splunkforwarder':
+      ensure => latest,
+    }
   }
+
 
   case $systemd {
     true: {
