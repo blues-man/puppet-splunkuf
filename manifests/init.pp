@@ -89,8 +89,8 @@ class splunkuf (
 
   if $mgmthostport != undef {
     file { '/opt/splunkforwarder/etc/system/local/web.conf':
-      owner   => 'root',
-      group   => 'root',
+      owner   => $system_user,
+      group   => $system_user,
       mode    => '0644',
       content => template('splunkuf/web.conf.erb'),
       notify  => Service['splunkforwarder'],
