@@ -28,18 +28,23 @@
 #
 class splunkuf (
   $targeturi    = $::splunkuf::params::targeturi,
-  $rpm_url      = $::splunkuf::params::rpm_url,
+  $package_url  = $::splunkuf::params::package_url,
   $systemd      = $::splunkuf::params::systemd,
   $system_user  = $::splunkuf::params::system_user,
   $mgmthostport = $::splunkuf::params::mgmthostport,
 ) inherits splunkuf::params {
 
 
-  if $rpm_url != undef {
+  if $package_url != undef {
+    $provider = $::osfamily ? {
+      'RedHat' => 'rpm',
+      'Debian' => 'apt',
+      default  => 'rpm',
+    }
     package { 'splunkforwarder':
       ensure   => installed,
-      provider => 'rpm',
-      source   => $rpm_url
+      provider => $provider,
+      source   => $package_url
     }
   } else {
     package { 'splunkforwarder':
