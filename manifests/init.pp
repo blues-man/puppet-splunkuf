@@ -33,6 +33,7 @@ class splunkuf (
   $enabled      = $::splunkuf::params::enabled,
   $system_user  = $::splunkuf::params::system_user,
   $mgmthostport = $::splunkuf::params::mgmthostport,
+  $unmanaged    = $::splunkuf::params::unmanaged
 ) inherits splunkuf::params {
 
 
@@ -79,25 +80,51 @@ class splunkuf (
     group   => $system_user,
     recurse => true,
     require => Package['splunkforwarder'],
-  } ->
-  file { '/opt/splunkforwarder/etc/system/local/deploymentclient.conf':
-    owner   => $system_user,
-    group   => $system_user,
-    mode    => '0644',
-    unless => 'test -f /opt/splunkforwarder/etc/system/local/deploymentclient.conf',
-    content => template('splunkuf/deploymentclient.conf.erb'),
-    notify  => Service['splunkforwarder'],
   }
 
-  if $mgmthostport != undef {
-    file { '/opt/splunkforwarder/etc/system/local/web.conf':
+  if $unmanaged {
+    file { '/opt/splunkforwarder/etc/system/local/deploymentclient.conf':
       owner   => $system_user,
       group   => $system_user,
       mode    => '0644',
-      content => template('splunkuf/web.conf.erb'),
+      unless  => 'test -f /opt/splunkforwarder/etc/system/local/deploymentclient.conf',
+      content => template('splunkuf/deploymentclient.conf.erb'),
       notify  => Service['splunkforwarder'],
-      require => Package['splunkforwarder'],
+      require => File['/opt/splunkforwarder']
     }
+
+    if $mgmthostport != undef {
+      file { '/opt/splunkforwarder/etc/system/local/web.conf':
+        owner   => $system_user,
+        group   => $system_user,
+        mode    => '0644',
+        unless  => 'test -f /opt/splunkforwarder/etc/system/local/web.conf',
+        content => template('splunkuf/web.conf.erb'),
+        notify  => Service['splunkforwarder'],
+        require => Package['splunkforwarder'],
+      }
+    }
+  } else {
+    file { '/opt/splunkforwarder/etc/system/local/deploymentclient.conf':
+      owner   => $system_user,
+      group   => $system_user,
+      mode    => '0644',
+      content => template('splunkuf/deploymentclient.conf.erb'),
+      notify  => Service['splunkforwarder'],
+      require => File['/opt/splunkforwarder']
+    }
+
+    if $mgmthostport != undef {
+      file { '/opt/splunkforwarder/etc/system/local/web.conf':
+        owner   => $system_user,
+        group   => $system_user,
+        mode    => '0644',
+        content => template('splunkuf/web.conf.erb'),
+        notify  => Service['splunkforwarder'],
+        require => Package['splunkforwarder'],
+      }
+    }
+
   }
 
   service { 'splunkforwarder':

@@ -25,6 +25,7 @@ class splunkuf::params {
   $system_user = 'splunk'
   $package_url = undef
   $enabled     = true
+  $unmanaged   = false
 
   $mgmthostport = undef
 
