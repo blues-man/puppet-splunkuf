@@ -23,7 +23,8 @@
 class splunkuf::params {
   $targeturi   = 'spunk.tld:8089'
   $system_user = 'splunk'
-  $package_url     = undef
+  $package_url = undef
+  $enabled     = true
 
   $mgmthostport = undef
 

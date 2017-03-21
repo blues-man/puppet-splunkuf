@@ -30,6 +30,7 @@ class splunkuf (
   $targeturi    = $::splunkuf::params::targeturi,
   $package_url  = $::splunkuf::params::package_url,
   $systemd      = $::splunkuf::params::systemd,
+  $enabled      = $::splunkuf::params::enabled,
   $system_user  = $::splunkuf::params::system_user,
   $mgmthostport = $::splunkuf::params::mgmthostport,
 ) inherits splunkuf::params {
