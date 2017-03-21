@@ -87,7 +87,7 @@ class splunkuf (
       owner   => $system_user,
       group   => $system_user,
       mode    => '0644',
-      unless  => 'test -f /opt/splunkforwarder/etc/system/local/deploymentclient.conf',
+      replace => 'no',
       content => template('splunkuf/deploymentclient.conf.erb'),
       notify  => Service['splunkforwarder'],
       require => File['/opt/splunkforwarder']
@@ -98,7 +98,7 @@ class splunkuf (
         owner   => $system_user,
         group   => $system_user,
         mode    => '0644',
-        unless  => 'test -f /opt/splunkforwarder/etc/system/local/web.conf',
+        replace => 'no',
         content => template('splunkuf/web.conf.erb'),
         notify  => Service['splunkforwarder'],
         require => Package['splunkforwarder'],
