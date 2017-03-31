@@ -37,98 +37,142 @@ class splunkuf (
 ) inherits splunkuf::params {
 
 
-  if $package_url != undef {
-    $provider = $::osfamily ? {
-      'RedHat' => 'rpm',
-      'Debian' => 'apt',
-      default  => 'rpm',
-    }
+  if $unmanaged and !$enabled {
+
     package { 'splunkforwarder':
-      ensure   => installed,
-      provider => $provider,
-      source   => $package_url
+      ensure   => absent,
+      notify => Exec['purge_dir']
     }
+
+    exec { 'purge_dir':
+      command => '/bin/rm -fr /opt/splunkforwarder',
+      logoutput => true,
+      onlyif => '/usr/bin/test -d /opt/splunkforwarder'
+
+    }
+
+    case $systemd {
+      true: {
+        file { '/usr/lib/systemd/system/splunkforwarder.service':
+              ensure => absent,
+              notify => Exec['daemon-reload']
+        }
+      }
+      default: {
+        file { '/etc/init.d/splunkforwarder':
+          ensure => absent
+        }
+      }
+    }
+
+    exec { 'daemon-reload':
+      command => '/usr/bin/systemctl daemon-reload'
+    }
+
   } else {
-    package { 'splunkforwarder':
-      ensure => latest,
-    }
-  }
 
-
-  case $systemd {
-    true: {
-      file { '/usr/lib/systemd/system/splunkforwarder.service':
-        owner   => 'root',
-        group   => 'root',
-        mode    => '0755',
-        content => template('splunkuf/splunkforwarder.service.erb'),
+    if $package_url != undef {
+      $provider = $::osfamily ? {
+        'RedHat' => 'rpm',
+        'Debian' => 'apt',
+        default  => 'rpm',
+      }
+      package { 'splunkforwarder':
+        ensure   => installed,
+        provider => $provider,
+        source   => $package_url
+      }
+    } else {
+      package { 'splunkforwarder':
+        ensure => latest,
       }
     }
-    default: {
-      file { '/etc/init.d/splunkforwarder':
-        owner   => 'root',
-        group   => 'root',
-        mode    => '0755',
-        content => template('splunkuf/splunkforwarder.erb'),
+
+
+    case $systemd {
+      true: {
+        file { '/usr/lib/systemd/system/splunkforwarder.service':
+          owner   => 'root',
+          group   => 'root',
+          mode    => '0755',
+          content => template('splunkuf/splunkforwarder.service.erb'),
+        }
+      }
+      default: {
+        file { '/etc/init.d/splunkforwarder':
+          owner   => 'root',
+          group   => 'root',
+          mode    => '0755',
+          content => template('splunkuf/splunkforwarder.erb'),
+        }
       }
     }
-  }
 
-  file { '/opt/splunkforwarder':
-    ensure  => directory,
-    owner   => $system_user,
-    group   => $system_user,
-    recurse => true,
-    require => Package['splunkforwarder'],
-  }
-
-  if $unmanaged {
-    file { '/opt/splunkforwarder/etc/system/local/deploymentclient.conf':
+    file { '/opt/splunkforwarder':
+      ensure  => directory,
       owner   => $system_user,
       group   => $system_user,
-      mode    => '0644',
-      replace => 'no',
-      content => template('splunkuf/deploymentclient.conf.erb'),
-      notify  => Service['splunkforwarder'],
-      require => File['/opt/splunkforwarder']
+      recurse => true,
+      require => Package['splunkforwarder'],
     }
 
-    if $mgmthostport != undef {
-      file { '/opt/splunkforwarder/etc/system/local/web.conf':
+    if $unmanaged {
+      file { '/opt/splunkforwarder/etc/system/local/deploymentclient.conf':
         owner   => $system_user,
         group   => $system_user,
         mode    => '0644',
         replace => 'no',
-        content => template('splunkuf/web.conf.erb'),
+        content => template('splunkuf/deploymentclient.conf.erb'),
         notify  => Service['splunkforwarder'],
-        require => Package['splunkforwarder'],
+        require => File['/opt/splunkforwarder']
       }
-    }
-  } else {
-    file { '/opt/splunkforwarder/etc/system/local/deploymentclient.conf':
-      owner   => $system_user,
-      group   => $system_user,
-      mode    => '0644',
-      content => template('splunkuf/deploymentclient.conf.erb'),
-      notify  => Service['splunkforwarder'],
-      require => File['/opt/splunkforwarder']
-    }
 
-    if $mgmthostport != undef {
-      file { '/opt/splunkforwarder/etc/system/local/web.conf':
+      if $mgmthostport != undef {
+        file { '/opt/splunkforwarder/etc/system/local/web.conf':
+          owner   => $system_user,
+          group   => $system_user,
+          mode    => '0644',
+          replace => 'no',
+          content => template('splunkuf/web.conf.erb'),
+          notify  => Service['splunkforwarder'],
+          require => Package['splunkforwarder'],
+        }
+      }
+    } else {
+      file { '/opt/splunkforwarder/etc/system/local/deploymentclient.conf':
         owner   => $system_user,
         group   => $system_user,
         mode    => '0644',
-        content => template('splunkuf/web.conf.erb'),
+        content => template('splunkuf/deploymentclient.conf.erb'),
         notify  => Service['splunkforwarder'],
-        require => Package['splunkforwarder'],
+        require => File['/opt/splunkforwarder']
+      }
+
+      if $mgmthostport != undef {
+        file { '/opt/splunkforwarder/etc/system/local/web.conf':
+          owner   => $system_user,
+          group   => $system_user,
+          mode    => '0644',
+          content => template('splunkuf/web.conf.erb'),
+          notify  => Service['splunkforwarder'],
+          require => Package['splunkforwarder'],
+        }
+      }
+
+    }
+
+    if $enabled {
+      service { 'splunkforwarder':
+        ensure => 'running',
+        enable => true,
+      }
+    } else {
+      service { 'splunkforwarder':
+        ensure => 'stopped',
+        enable => false,
       }
     }
 
   }
 
-  service { 'splunkforwarder':
-    ensure => 'running',
-    enable => true,
-  }
 }
